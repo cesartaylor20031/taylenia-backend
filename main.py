@@ -53,6 +53,7 @@ async def guardar_historia(request: Request):
 @app.post("/generar_preguntas")
 async def generar_preguntas(request: Request):
     datos = await request.json()
+    print("Datos recibidos:", datos)
 
     prompt = f"""Eres un médico que interroga al paciente. Según estos datos clínicos, genera 10 preguntas semiológicas muy específicas que consideres importantes para complementar la historia clínica y hacer más preciso el diagnóstico.
 
@@ -61,15 +62,20 @@ Datos del paciente:
 
 Preguntas:"""
 
-    # Llama 3 real conectado por ngrok
     ollama_url = "https://0cfa-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate"
     payload = {
         "model": "llama3",
         "prompt": prompt,
         "stream": False
     }
-    ollama_response = requests.post(ollama_url, json=payload)
-    respuesta_modelo = ollama_response.json()["response"]
+
+    try:
+        ollama_response = requests.post(ollama_url, json=payload, timeout=30)
+        ollama_response.raise_for_status()
+        respuesta_modelo = ollama_response.json().get("response", "")
+    except Exception as e:
+        print("Error al contactar a Ollama:", e)
+        return {"error": "No se pudo generar preguntas. Verifica que el modelo esté corriendo y accesible."}
 
     preguntas = [p.strip("- ").strip() for p in respuesta_modelo.split("\n") if p.strip()]
     return {"preguntas": preguntas}
