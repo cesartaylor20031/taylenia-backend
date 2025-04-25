@@ -45,15 +45,10 @@ Datos del paciente:
 {json.dumps(datos, indent=2, ensure_ascii=False)}
 
 Preguntas:"""
-
-    response = requests.post(
-        "https://7cdc-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate",
-        json={
-            "model": "llama3",
-            "prompt": prompt,
-            "stream": False
-        }
-    )
+response = requests.post(
+    "https://0cfa-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate",
+    json={"model": "llama3", "prompt": prompt}
+)
 
     respuesta = response.json()["response"]
     preguntas = [p.strip("- ").strip() for p in respuesta.strip().split("\n") if p.strip()]
