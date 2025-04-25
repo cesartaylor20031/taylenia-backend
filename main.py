@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import json
 import os
 from datetime import datetime
+import requests
 
 app = FastAPI()
 
@@ -34,3 +35,26 @@ async def guardar_historia(request: Request):
         json.dump(data, f, ensure_ascii=False, indent=2)
 
     return {"mensaje": "Historial guardado", "expediente": id_paciente}
+
+@app.post("/generar_preguntas")
+async def generar_preguntas(request: Request):
+    datos = await request.json()
+    prompt = f"""Eres un médico que interroga al paciente. Según estos datos clínicos, genera 10 preguntas semiológicas muy específicas que consideres importantes para complementar la historia clínica y hacer más preciso el diagnóstico.
+
+Datos del paciente:
+{json.dumps(datos, indent=2, ensure_ascii=False)}
+
+Preguntas:"""
+
+    response = requests.post(
+        "https://7cdc-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate",
+        json={
+            "model": "llama3",
+            "prompt": prompt,
+            "stream": False
+        }
+    )
+
+    respuesta = response.json()["response"]
+    preguntas = [p.strip("- ").strip() for p in respuesta.strip().split("\n") if p.strip()]
+    return {"preguntas": preguntas}
