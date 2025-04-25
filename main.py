@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-import json
 import os
+import json
 from datetime import datetime
-import requests
 
 app = FastAPI()
 
@@ -16,7 +15,21 @@ app.add_middleware(
 
 @app.post("/guardar_historia")
 async def guardar_historia(request: Request):
-    data = await request.json()
+    datos = await request.json()
+
+    historia = {
+        "nombre": datos.get("nombre"),
+        "whatsapp": datos.get("whatsapp"),
+        "correo": datos.get("correo"),
+        "edad_sexo_ocupacion": datos.get("edad_sexo_ocupacion"),
+        "heredofamiliares": datos.get("heredofamiliares"),
+        "estilo_vida": datos.get("estilo_vida"),
+        "patologicos": datos.get("patologicos"),
+        "padecimiento": datos.get("padecimiento"),
+        "extra": datos.get("extra"),
+        "medicamentos": datos.get("medicamentos"),
+        "optin_whatsapp": datos.get("optin_whatsapp")
+    }
 
     fecha_hoy = datetime.now().strftime("%d%m%y")
     carpeta_base = "data/RespaldoPacientes"
@@ -32,24 +45,6 @@ async def guardar_historia(request: Request):
 
     os.makedirs(ruta_paciente)
     with open(os.path.join(ruta_paciente, "historia_clinica.json"), "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
+        json.dump(historia, f, ensure_ascii=False, indent=2)
 
-    return {"mensaje": "Historial guardado", "expediente": id_paciente}
-
-@app.post("/generar_preguntas")
-async def generar_preguntas(request: Request):
-    datos = await request.json()
-    prompt = f"""Eres un médico que interroga al paciente. Según estos datos clínicos, genera 10 preguntas semiológicas muy específicas que consideres importantes para complementar la historia clínica y hacer más preciso el diagnóstico.
-
-Datos del paciente:
-{json.dumps(datos, indent=2, ensure_ascii=False)}
-
-Preguntas:"""
-    response = requests.post(
-        "https://0cfa-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate",
-        json={"model": "llama3", "prompt": prompt}
-    )
-
-    respuesta = response.json()["response"]
-    preguntas = [p.strip("- ").strip() for p in respuesta.strip().split("\n") if p.strip()]
-    return {"preguntas": preguntas}
+    return {"mensaje": "Historial guardado exitosamente", "expediente": id_paciente}
