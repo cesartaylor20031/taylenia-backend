@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import json
 from datetime import datetime
+import requests
 
 app = FastAPI()
 
@@ -60,19 +61,15 @@ Datos del paciente:
 
 Preguntas:"""
 
-    # Simulación local de respuesta de modelo
-    response = {
-        "response": """1. ¿Desde cuándo inició el dolor que mencionas?
-2. ¿El dolor aumenta al hacer ciertos movimientos o actividades?
-3. ¿Cómo describirías el tipo de dolor: punzante, sordo, ardoroso?
-4. ¿El dolor se presenta en algún momento específico del día o es constante?
-5. ¿Has notado si el dolor se irradia hacia otras zonas del cuerpo?
-6. ¿Has presentado fiebre, pérdida de peso o fatiga recientemente?
-7. ¿El dolor ha afectado tu sueño o tu capacidad para realizar actividades cotidianas?
-8. ¿Has tenido antecedentes similares en el pasado?
-9. ¿El dolor mejora o empeora con algún medicamento o tratamiento?
-10. ¿Hay factores emocionales o de estrés que consideres estén relacionados con este dolor?"""
+    # Llama 3 real conectado por ngrok
+    ollama_url = "https://0cfa-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate"
+    payload = {
+        "model": "llama3",
+        "prompt": prompt,
+        "stream": False
     }
+    ollama_response = requests.post(ollama_url, json=payload)
+    respuesta_modelo = ollama_response.json()["response"]
 
-    preguntas = [p.strip("- ").strip() for p in response["response"].split("\n") if p.strip()]
+    preguntas = [p.strip("- ").strip() for p in respuesta_modelo.split("\n") if p.strip()]
     return {"preguntas": preguntas}
