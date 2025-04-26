@@ -7,10 +7,10 @@ import requests
 
 app = FastAPI()
 
-# Middleware CORS para aceptar peticiones desde cualquier lugar
+# 🛡️ Middleware CORS corregido
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://taylenia.com"],  # Ahora sí permitido tu dominio
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,7 +32,7 @@ async def guardar_historia(request: Request):
         "extra": datos.get("extra"),
         "medicamentos": datos.get("medicamentos"),
         "optin_whatsapp": datos.get("optin_whatsapp"),
-        "respuestas_preguntas": datos.get("respuestas_preguntas")  # Asegura guardar respuestas también
+        "respuestas_preguntas": datos.get("respuestas_preguntas")  # Guardar también respuestas
     }
 
     fecha_hoy = datetime.now().strftime("%d%m%y")
@@ -53,7 +53,6 @@ async def guardar_historia(request: Request):
 
     return {"mensaje": "Historial guardado exitosamente", "expediente": id_paciente}
 
-# 🚑 Nueva ruta para generar preguntas semiológicas
 @app.post("/generar_preguntas")
 async def generar_preguntas(request: Request):
     datos = await request.json()
@@ -73,8 +72,5 @@ Preguntas:"""
 
     respuesta_texto = llama_response.json()["response"]
     preguntas = [p.strip("- ").strip() for p in respuesta_texto.split("\n") if p.strip()]
-    
-    return {"preguntas": preguntas}
 
-    preguntas = [p.strip("- ").strip() for p in respuesta_modelo.split("\n") if p.strip()]
     return {"preguntas": preguntas}
