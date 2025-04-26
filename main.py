@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import os
 import json
 from datetime import datetime
@@ -7,10 +8,10 @@ import requests
 
 app = FastAPI()
 
-# 🛡️ Middleware CORS corregido
+# Middleware CORS corregido para Render
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://taylenia.com"],  # Ahora sí permitido tu dominio
+    allow_origins=["https://taylenia.com"],  # Cambiado para que acepte sólo tu frontend
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -32,7 +33,7 @@ async def guardar_historia(request: Request):
         "extra": datos.get("extra"),
         "medicamentos": datos.get("medicamentos"),
         "optin_whatsapp": datos.get("optin_whatsapp"),
-        "respuestas_preguntas": datos.get("respuestas_preguntas")  # Guardar también respuestas
+        "respuestas_preguntas": datos.get("respuestas_preguntas")  # Guardamos respuestas también
     }
 
     fecha_hoy = datetime.now().strftime("%d%m%y")
@@ -53,6 +54,10 @@ async def guardar_historia(request: Request):
 
     return {"mensaje": "Historial guardado exitosamente", "expediente": id_paciente}
 
+@app.options("/generar_preguntas")
+async def options_generar_preguntas():
+    return JSONResponse(content={}, status_code=200)
+
 @app.post("/generar_preguntas")
 async def generar_preguntas(request: Request):
     datos = await request.json()
@@ -72,5 +77,5 @@ Preguntas:"""
 
     respuesta_texto = llama_response.json()["response"]
     preguntas = [p.strip("- ").strip() for p in respuesta_texto.split("\n") if p.strip()]
-
+    
     return {"preguntas": preguntas}
