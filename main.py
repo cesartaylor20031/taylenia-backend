@@ -7,9 +7,11 @@ import requests
 
 app = FastAPI()
 
+# Middleware CORS para aceptar peticiones desde cualquier lugar
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -29,7 +31,8 @@ async def guardar_historia(request: Request):
         "padecimiento": datos.get("padecimiento"),
         "extra": datos.get("extra"),
         "medicamentos": datos.get("medicamentos"),
-        "optin_whatsapp": datos.get("optin_whatsapp")
+        "optin_whatsapp": datos.get("optin_whatsapp"),
+        "respuestas_preguntas": datos.get("respuestas_preguntas")  # Asegura guardar respuestas también
     }
 
     fecha_hoy = datetime.now().strftime("%d%m%y")
@@ -50,32 +53,28 @@ async def guardar_historia(request: Request):
 
     return {"mensaje": "Historial guardado exitosamente", "expediente": id_paciente}
 
+# 🚑 Nueva ruta para generar preguntas semiológicas
 @app.post("/generar_preguntas")
 async def generar_preguntas(request: Request):
     datos = await request.json()
-    print("Datos recibidos:", datos)
 
-    prompt = f"""Eres un médico que interroga al paciente. Según estos datos clínicos, genera 10 preguntas semiológicas muy específicas que consideres importantes para complementar la historia clínica y hacer más preciso el diagnóstico.
+    prompt = f"""Eres un médico experto en semiología clínica.
+Con base en estos datos del paciente, genera 10 preguntas semiológicas específicas para complementar su historia clínica.
 
 Datos del paciente:
 {json.dumps(datos, indent=2, ensure_ascii=False)}
 
 Preguntas:"""
 
-    ollama_url = "https://0cfa-2806-2f0-9fe0-fb4d-e528-37a0-170c-94e2.ngrok-free.app/api/generate"
-    payload = {
-        "model": "llama3",
-        "prompt": prompt,
-        "stream": False
-    }
+    llama_response = requests.post(
+        "http://localhost:11434/api/generate",
+        json={"model": "llama3", "prompt": prompt, "stream": False}
+    )
 
-    try:
-        ollama_response = requests.post(ollama_url, json=payload, timeout=30)
-        ollama_response.raise_for_status()
-        respuesta_modelo = ollama_response.json().get("response", "")
-    except Exception as e:
-        print("Error al contactar a Ollama:", e)
-        return {"error": "No se pudo generar preguntas. Verifica que el modelo esté corriendo y accesible."}
+    respuesta_texto = llama_response.json()["response"]
+    preguntas = [p.strip("- ").strip() for p in respuesta_texto.split("\n") if p.strip()]
+    
+    return {"preguntas": preguntas}
 
     preguntas = [p.strip("- ").strip() for p in respuesta_modelo.split("\n") if p.strip()]
     return {"preguntas": preguntas}
